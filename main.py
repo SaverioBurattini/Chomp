@@ -9,9 +9,6 @@ STATO DEL GIOCO:
        non è stato ancora mangiato.
 """
 
-# ---------------------------------------------------------------------------- #
-#                                Stato del gioco                               #
-# ---------------------------------------------------------------------------- #
 
 def aggiungi_caption_canvas(canvas):
   canvas.drawLine(0, canvas.height()-SIZEY_CAPTION+5, canvas.width(), canvas.height()-SIZEY_CAPTION+5)
@@ -20,8 +17,6 @@ def aggiungi_caption_canvas(canvas):
   canvas.drawText(canvas.width()//2, canvas.height()-SIZEY_CAPTION//2, f"Turno giocatore {giocatore}")
    
 def aggiorna_canvas_fine_turno(canvas, barretta, cioccolato):
-  global giocatore
-  giocatore = 2 if giocatore == 1 else 1
   canvas.clear()
   aggiungi_caption_canvas(canvas)
   disegna_barretta(canvas, barretta, cioccolato) # aggiorna graficamente la barretta con lo stato dei quadratini di cioccolato tenendo conto di quelli mangiati
@@ -74,8 +69,7 @@ def print_matrix_with_indices(matrix):
         # Print a new line after each row
         print()
 
-# Variabili stato di gioco ai valori iniziali
-giocatore = 1
+giocatore = 1 # variabile di stato di gioco al valore iniziale
 def main():
   cioccolato = GraphicsImage("chocolate.png")
   win = GraphicsWindow(SIZEX * cioccolato.width(), 
@@ -101,16 +95,16 @@ def inizializza_gioco(win, canvas, cioccolato):
     colonna_matrice = x // cioccolato.width()
     riga_matrice = y // cioccolato.height()
 
+  # La matrice viene modificata in modo tale che i suoi elementi assumano valore 0 nel caso in cui il quadratino corrispondente sia stato mangiato (rimane 1 se non è stato mangiato)
     for i in range(riga_matrice, len(barretta)):
         for j in range(colonna_matrice, len(barretta[i])):
             barretta[i][j] = 0
     
-    aggiorna_canvas_fine_turno(canvas, barretta, cioccolato)
-
-    print_matrix_with_indices(barretta) ## DEBUG
-
+    global giocatore
+    giocatore = 2 if giocatore == 1 else 1
 
     # ---------------------- Verifica condizioni di vittoria --------------------- #
+    # ------- (aprendo eventualmente la schermata di conclusione del gioco) ------ #
     if barretta[0][0] == 0: # controlla se il quadratino avvelenato è stato mangiato; se sì, apre la schermata di conclusione del gioco
       canvas.clear()
       canvas.setTextAnchor("center")
@@ -118,9 +112,17 @@ def inizializza_gioco(win, canvas, cioccolato):
       canvas.drawText(canvas.width()//2,canvas.height()//2,f"Giocatore {giocatore} vince!") # visualizza sulla canvas il testo con l'annuncio del vincitore
       canvas.setFontSize(10)
       canvas.drawText(canvas.width()//2,canvas.height()//2+30,f"Clicca sullo schermo per tornare alla schermata iniziale")
+      
+      giocatore = 1
 
       win.getMouse()
       schermata_iniziale(win, canvas, cioccolato)
+
+    aggiorna_canvas_fine_turno(canvas, barretta, cioccolato)
+
+    print_matrix_with_indices(barretta) ## DEBUG
+
+
 
 
 main()
