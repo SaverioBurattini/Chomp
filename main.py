@@ -12,53 +12,57 @@ STATO DEL GIOCO:
 # ---------------------------------------------------------------------------- #
 #                                Stato del gioco                               #
 # ---------------------------------------------------------------------------- #
-def aggiorna_turno_giocatore():
-  # TODO scrivere sotto forma di shorthand if-else
-  # giocatore = 1 if giocatore == 2 else giocatore = 1
-  global giocatore
-  if giocatore == 1:
-    giocatore = 2
-  else:
-    giocatore = 1
-  # TODO non print, su interfaccia grafica
-  print(f"è il turno del giocatore {giocatore}")
 
-
-def schermata_iniziale():
-    cioccolato = GraphicsImage("chocolate.png")
-    win = GraphicsWindow(SIZEX * cioccolato.width(), 
-                          SIZEY * cioccolato.height()) # crea la finestra grafica con grandezze ricavate dalla grandezza in px dell'immagine del quadratino di cioccolato
-    win.setTitle("Chomp")
-    canvas = win.canvas()
-    canvas.draw()
-    win.wait()
+def aggiungi_caption_canvas(canvas):
+  canvas.drawLine(0, canvas.height()-SIZEY_CAPTION+5, canvas.width(), canvas.height()-SIZEY_CAPTION+5)
+  canvas.setTextAnchor("center")
+  canvas.setFontSize(10)
+  canvas.drawText(canvas.width()//2, canvas.height()-SIZEY_CAPTION//2, f"Turno giocatore {giocatore}")
    
+def aggiorna_canvas_fine_turno(canvas, barretta, cioccolato):
+  global giocatore
+  giocatore = 2 if giocatore == 1 else 1
+  canvas.clear()
+  aggiungi_caption_canvas(canvas)
+  disegna_barretta(canvas, barretta, cioccolato) # aggiorna graficamente la barretta con lo stato dei quadratini di cioccolato tenendo conto di quelli mangiati
 
 
-SIZEX = 10
-SIZEY = 5
+def schermata_iniziale(win, canvas, cioccolato):
+    canvas.clear()
+
+    for i in range(1,3):
+      canvas.drawLine((canvas.width()//3*i),0,(canvas.width()//3*i),canvas.height())
+    
+    x,y = win.getMouse()
+    inizializza_gioco(win, canvas, cioccolato)
+
+
+
+SIZEX = 10 # grandezza griglia barretta orizzontale
+SIZEY = 5 # grandezza griglia barretta verticale
+SIZEY_CAPTION = SIZEY*7.5
 
 def matrice_costante(nrow, ncol, v):
-    """
-    Restituisce una matrice di nrow righe, ncol colonne,
-    piena di v.    
-    """
-    m = []
-    for _ in range(nrow):
-        m.append([v] * ncol)
-    return m
+  """
+  Restituisce una matrice di nrow righe, ncol colonne,
+  piena di v.    
+  """
+  m = []
+  for _ in range(nrow):
+      m.append([v] * ncol)
+  return m
 
 def disegna_barretta(canvas, barretta, img):
-    """
-    Disegna la barretta di cioccolato sul canvas.
-    """
-    for i in range(len(barretta)):
-        for j in range(len(barretta[i])):
-            if barretta[i][j] == 1:  # Disegna solo i quadrati non mangiati
-                canvas.drawImage(j * img.width(), i * img.height(), img)
-            if (i,j) == (0,0):
-              canvas.setFill("green")
-              canvas.drawRectangle(0,0,img.width()*0.75,img.height()*0.75)
+  """
+  Disegna la barretta di cioccolato sul canvas.
+  """
+  for i in range(len(barretta)):
+      for j in range(len(barretta[i])):
+          if barretta[i][j] == 1:  # disegna solo i quadrati non mangiati
+              canvas.drawImage(j * img.width(), i * img.height(), img)
+          if (i,j) == (0,0): # disegna un quadrato verde sul quadratino avvelenato
+            canvas.setFill("green")
+            canvas.drawRectangle(0,0,img.width()*0.75,img.height()*0.75)
 
 def print_matrix_with_indices(matrix):
     # Loop over each row
@@ -70,50 +74,53 @@ def print_matrix_with_indices(matrix):
         # Print a new line after each row
         print()
 
-
+# Variabili stato di gioco ai valori iniziali
 giocatore = 1
 def main():
-    # ---------------------- Inizializzazione stato di gioco --------------------- #
-    # - creare le variabili che rappresentano lo stato del gioco e impostarle al valore iniziale
+  cioccolato = GraphicsImage("chocolate.png")
+  win = GraphicsWindow(SIZEX * cioccolato.width(), 
+                      SIZEY * cioccolato.height() + SIZEY_CAPTION) # crea la finestra grafica con grandezze ricavate dalla grandezza in px dell'immagine del quadratino di cioccolato
+  win.setTitle("Chomp")
+  canvas = win.canvas()
+  schermata_iniziale(win, canvas, cioccolato)  
 
-    # - creare la matrice iniziale di gioco
-    barretta = matrice_costante(SIZEY, SIZEX, 1)
+def inizializza_gioco(win, canvas, cioccolato):
+  canvas.clear()
 
-
-    # ------------------------------- Parte grafica ------------------------------ #
-    cioccolato = GraphicsImage("chocolate.png")
-    win = GraphicsWindow(SIZEX * cioccolato.width(), 
-                         SIZEY * cioccolato.height()) # crea la finestra grafica con grandezze ricavate dalla grandezza in px dell'immagine del quadratino di cioccolato
-    win.setTitle("Chomp")
-    canvas = win.canvas()
-
-    disegna_barretta(canvas, barretta, cioccolato) # disegna graficamente la barretta di cioccolato per la prima volta
+  barretta = matrice_costante(SIZEY, SIZEX, 1) # crea la matrice iniziale di gioco
 
 
-    while True:
-      x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
 
-      colonna_matrice = x // cioccolato.width()
-      riga_matrice = y // cioccolato.height()
+  aggiungi_caption_canvas(canvas)
+  disegna_barretta(canvas, barretta, cioccolato) # disegna graficamente la barretta di cioccolato per la prima volta
 
-      for i in range(riga_matrice, len(barretta)):
-         for j in range(colonna_matrice, len(barretta[i])):
-              barretta[i][j] = 0
-      
-      canvas.clear()
-      disegna_barretta(canvas, barretta, cioccolato) # aggiorna graficamente la barretta con lo stato dei quadratini di cioccolato tenendo conto di quelli che ho mangiato
-      print_matrix_with_indices(barretta) ## DEBUG
 
-      aggiorna_turno_giocatore()
+  while True:
+    x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
 
-      # ---------------------- Verifica condizioni di vittoria --------------------- #
-      if barretta[0][0] == 0: # controlla se il quadratino avvelenato è stato mangiato; se sì, esce dal ciclo
-        print(f"{giocatore} vince!") # visualizza messaggio con vincitore
-        canvas.clear()
-        schermata_iniziale() # fine gioco
+    colonna_matrice = x // cioccolato.width()
+    riga_matrice = y // cioccolato.height()
 
-      pass
-
+    for i in range(riga_matrice, len(barretta)):
+        for j in range(colonna_matrice, len(barretta[i])):
+            barretta[i][j] = 0
     
+    aggiorna_canvas_fine_turno(canvas, barretta, cioccolato)
 
-schermata_iniziale()
+    print_matrix_with_indices(barretta) ## DEBUG
+
+
+    # ---------------------- Verifica condizioni di vittoria --------------------- #
+    if barretta[0][0] == 0: # controlla se il quadratino avvelenato è stato mangiato; se sì, apre la schermata di conclusione del gioco
+      canvas.clear()
+      canvas.setTextAnchor("center")
+      canvas.setFontSize(25)
+      canvas.drawText(canvas.width()//2,canvas.height()//2,f"Giocatore {giocatore} vince!") # visualizza sulla canvas il testo con l'annuncio del vincitore
+      canvas.setFontSize(10)
+      canvas.drawText(canvas.width()//2,canvas.height()//2+30,f"Clicca sullo schermo per tornare alla schermata iniziale")
+
+      win.getMouse()
+      schermata_iniziale(win, canvas, cioccolato)
+
+
+main()
