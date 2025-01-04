@@ -1,4 +1,5 @@
 from ezgraphics import GraphicsWindow, GraphicsImage
+from playsound import playsound
 """
 STATO DEL GIOCO:
    - il giocatore che deve muovere
@@ -22,16 +23,32 @@ def aggiorna_canvas_fine_turno(canvas, barretta, cioccolato):
   disegna_barretta(canvas, barretta, cioccolato) # aggiorna graficamente la barretta con lo stato dei quadratini di cioccolato tenendo conto di quelli mangiati
 
 
-def schermata_iniziale(win, canvas, cioccolato):
+def apri_schermata_iniziale(win, canvas, cioccolato):
     canvas.clear()
 
     for i in range(1,3):
       canvas.drawLine((canvas.width()//3*i),0,(canvas.width()//3*i),canvas.height())
+      
+    for i in range(1,4):
+      canvas.setTextAnchor("center")
+      canvas.setFontSize(9)
+      if i == 1:
+        canvas.drawText(canvas.width()//6,canvas.height()//2,"Giocatore contro Giocatore")
+      elif i == 2:
+         canvas.drawText(canvas.width()//2,canvas.height()//2,"Giocatore contro Computer")
+      elif i == 3:
+         canvas.drawText(canvas.width()//1.2,canvas.height()/2,"Computer contro Computer")
     
     x,y = win.getMouse()
-    inizializza_gioco(win, canvas, cioccolato)
-
-
+    if 0 <= x <= canvas.width()//3*1:
+      inizializza_gioco(win, canvas, cioccolato)
+    elif canvas.width()//3*1 <= x <= canvas.width()//3*2:
+       print("Caso 2")
+    elif canvas.width()//3*2 <= x <= canvas.width()//3*3:
+       print("Caso 3")
+    else:
+       print("Errore")
+       win.close()
 
 SIZEX = 10 # grandezza griglia barretta orizzontale
 SIZEY = 5 # grandezza griglia barretta verticale
@@ -76,7 +93,7 @@ def main():
                       SIZEY * cioccolato.height() + SIZEY_CAPTION) # crea la finestra grafica con grandezze ricavate dalla grandezza in px dell'immagine del quadratino di cioccolato
   win.setTitle("Chomp")
   canvas = win.canvas()
-  schermata_iniziale(win, canvas, cioccolato)  
+  apri_schermata_iniziale(win, canvas, cioccolato)  
 
 def inizializza_gioco(win, canvas, cioccolato):
   canvas.clear()
@@ -91,6 +108,7 @@ def inizializza_gioco(win, canvas, cioccolato):
 
   while True:
     x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
+    playsound("./nom_nom_sound.mp3")
 
     colonna_matrice = x // cioccolato.width()
     riga_matrice = y // cioccolato.height()
@@ -112,11 +130,11 @@ def inizializza_gioco(win, canvas, cioccolato):
       canvas.drawText(canvas.width()//2,canvas.height()//2,f"Giocatore {giocatore} vince!") # visualizza sulla canvas il testo con l'annuncio del vincitore
       canvas.setFontSize(10)
       canvas.drawText(canvas.width()//2,canvas.height()//2+30,f"Clicca sullo schermo per tornare alla schermata iniziale")
-      
+
       giocatore = 1
 
       win.getMouse()
-      schermata_iniziale(win, canvas, cioccolato)
+      apri_schermata_iniziale(win, canvas, cioccolato)
 
     aggiorna_canvas_fine_turno(canvas, barretta, cioccolato)
 
