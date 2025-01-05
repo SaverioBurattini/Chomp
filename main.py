@@ -1,5 +1,6 @@
 from ezgraphics import GraphicsWindow, GraphicsImage
 from random import randint
+from time import sleep
 
 
 def elimina_quadratini_matrice_barretta(barretta, x, y):
@@ -11,7 +12,9 @@ def elimina_quadratini_matrice_barretta(barretta, x, y):
       for j in range(x, len(barretta[i])):
           barretta[i][j] = 0
 
-def controlla_quadratini_matrice_barretta(barretta, x, y):
+
+
+def controlla_validita_mossa(barretta, x, y):
   """
   La funzione accetta come parametri la matrice di riferimento e di essa una colonna (x) e una riga (y).
   Viene controllato se nella matrice sono presenti elementi di valore 0 nella posizione data nelle coordinate x, y.
@@ -20,6 +23,9 @@ def controlla_quadratini_matrice_barretta(barretta, x, y):
 
 
 def scegli_mossa_bot():
+  """
+  Sceglie una mossa del Computer in base alla grandezza della barretta.
+  """
   x_CPU = randint(1,SIZEX)
   y_CPU = randint(1,SIZEY)
   return x_CPU, y_CPU
@@ -28,12 +34,20 @@ def aggiungi_caption_canvas(canvas):
   canvas.drawLine(0, canvas.height()-SIZEY_CAPTION+5, canvas.width(), canvas.height()-SIZEY_CAPTION+5)
   canvas.setTextAnchor("center")
   canvas.setFontSize(10)
-  canvas.drawText(canvas.width()//2, canvas.height()-SIZEY_CAPTION//2, f"Turno giocatore {giocatore}")
+  caption = f"Turno giocatore {giocatore}"
+  if (modalita_di_gioco == 1 and giocatore == 2) or modalita_di_gioco == 2:
+    caption = f"Turno del computer ({giocatore})"
+  canvas.drawText(canvas.width()//2, canvas.height()-SIZEY_CAPTION//2, f"{caption}")
    
 def aggiorna_canvas_fine_turno(canvas, barretta, cioccolato):
   canvas.clear()
   aggiungi_caption_canvas(canvas)
   disegna_barretta(canvas, barretta, cioccolato) # aggiorna graficamente la barretta con lo stato dei quadratini di cioccolato tenendo conto di quelli mangiati
+
+def fine_turno(canvas, barretta, cioccolato):
+  global giocatore
+  giocatore = 2 if giocatore == 1 else 1
+  aggiorna_canvas_fine_turno(canvas, barretta, cioccolato)
 
 
 def apri_schermata_iniziale(win, canvas, cioccolato):
@@ -58,15 +72,17 @@ def apri_schermata_iniziale(win, canvas, cioccolato):
     inizializza_gioco(win, canvas, cioccolato)
   elif canvas.width()//3*1 <= x <= canvas.width()//3*2:
       modalita_di_gioco = 1
+      inizializza_gioco(win, canvas, cioccolato)
   elif canvas.width()//3*2 <= x <= canvas.width()//3*3:
       modalita_di_gioco = 2
+      inizializza_gioco(win, canvas, cioccolato)
   else:
       print("Errore")
       win.close()
 
 SIZEX = 10 # grandezza griglia barretta orizzontale
 SIZEY = 5 # grandezza griglia barretta verticale
-SIZEY_CAPTION = SIZEY*7.5
+SIZEY_CAPTION = SIZEY*7.5 # grandezza della griglia della caption (solo orizzontale, prende tutto lo schermo)
 
 def matrice_costante(nrow, ncol, v):
   """
@@ -90,16 +106,6 @@ def disegna_barretta(canvas, barretta, img):
             canvas.setFill("green")
             canvas.drawRectangle(0,0,img.width()*0.75,img.height()*0.75)
 
-def print_matrix_with_indices(matrix):
-    # Loop over each row
-    for i in range(len(matrix)):
-        # Loop over each column in the current row
-        for j in range(len(matrix[i])):
-            # Print element at row i, column j
-            print(matrix[i][j], end=' ')
-        # Print a new line after each row
-        print()
-
 giocatore = 1 # variabile di stato di gioco del giocatore al valore iniziale (può assumere 1 o 2 in base al turno di quale giocatore gioca)
 modalita_di_gioco = 0 # variabile che cambia in base alla modalità del gioco scelta dal giocatore (0 = PvP, 1 = PvC, 2 = CvC)
 def main():
@@ -109,6 +115,9 @@ def main():
   win.setTitle("Chomp")
   canvas = win.canvas()
   apri_schermata_iniziale(win, canvas, cioccolato)  
+
+
+
 
 def inizializza_gioco(win, canvas, cioccolato):
   global giocatore
@@ -120,37 +129,34 @@ def inizializza_gioco(win, canvas, cioccolato):
   aggiungi_caption_canvas(canvas)
   disegna_barretta(canvas, barretta, cioccolato) # disegna graficamente la barretta di cioccolato per la prima volta
 
+  def gioca_mossa(x,y):
+    """
+    x,y = mossa
+    """
+    colonna_matrice = x // cioccolato.width()
+    riga_matrice = y // cioccolato.height()
+    if controlla_validita_mossa(barretta, colonna_matrice, riga_matrice):
+      elimina_quadratini_matrice_barretta(barretta, colonna_matrice, riga_matrice)
+      fine_turno(canvas, barretta, cioccolato)
+
 
   while True:
     # -------------------- Modalità Giocatore contro Giocatore ------------------- #
-
     if modalita_di_gioco == 0:
       x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
-      colonna_matrice = x // cioccolato.width()
-      riga_matrice = y // cioccolato.height()
-      if controlla_quadratini_matrice_barretta(barretta, colonna_matrice, riga_matrice):
-        elimina_quadratini_matrice_barretta(barretta, colonna_matrice, riga_matrice)
-        giocatore = 2 if giocatore == 1 else 1
-        aggiorna_canvas_fine_turno(canvas, barretta, cioccolato)
-
-
-
+      gioca_mossa(x,y)
 
     # # -------------------- Modalità Giocatore contro Computer -------------------- #
-    # if modalita_di_gioco == 1 and giocatore == 1:
-    #   while True:
-    #     x,y = win.getMouse()
-    #     if x or y == 0 in barretta:
-    #       x,y = win.getMouse()
-    #     else:
-    #       elimina_quadratini_matrice_barretta(barretta, colonna_matrice, riga_matrice)
-    # if modalita_di_gioco == 1 and giocatore == 2:
-    #   while True:
-    #     x_CPU, y_CPU = scegli_mossa_bot()
-    #     if x_CPU or y_CPU == 0 in barretta:
-    #       x_CPU, y_CPU = scegli_mossa_bot()
-    #     else:
-    #       elimina_quadratini_matrice_barretta(barretta, x_CPU, y_CPU)
+    if modalita_di_gioco == 1 and giocatore == 1:
+      x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
+      gioca_mossa(x,y)
+    elif modalita_di_gioco == 1 and giocatore == 2: # tocca al Computer
+      sleep(1) # tempo di attesa in secondi prima di fare una mossa
+      x_CPU, y_CPU = scegli_mossa_bot()
+      x_CPU *= cioccolato.width()
+      y_CPU *= cioccolato.height()
+      gioca_mossa(x_CPU, y_CPU)
+    
 
 
 
