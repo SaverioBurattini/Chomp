@@ -26,22 +26,26 @@ def scegli_mossa_bot():
   """
   Sceglie una mossa del Computer in base alla grandezza della barretta.
   """
-  x_CPU = randint(1,SIZEX)
-  y_CPU = randint(1,SIZEY)
+  x_CPU = randint(0,SIZEX-1)
+  y_CPU = randint(0,SIZEY-1)
   return x_CPU, y_CPU
 
-def aggiungi_caption_canvas(canvas):
+def disegna_capi(canvas):
   canvas.drawLine(0, canvas.height()-SIZEY_CAPTION+5, canvas.width(), canvas.height()-SIZEY_CAPTION+5)
   canvas.setTextAnchor("center")
   canvas.setFontSize(10)
-  caption = f"Turno giocatore {giocatore}"
-  if (modalita_di_gioco == 1 and giocatore == 2) or modalita_di_gioco == 2:
-    caption = f"Turno del computer ({giocatore})"
+  caption = f"Turno del giocatore {giocatore}" # modalità Giocatore contro Giocatore
+  if modalita_di_gioco == 2:
+    caption = f"Turno del computer {giocatore}"
+  elif(modalita_di_gioco == 1 and giocatore == 1): # modalità Giocatore contro Computer, turno del Giocatore
+    caption = f"Turno del giocatore"
+  elif(modalita_di_gioco == 1 and giocatore == 2): # modalità Giocatore contro Computer, turno del Computer
+    caption = f"Turno del computer"
   canvas.drawText(canvas.width()//2, canvas.height()-SIZEY_CAPTION//2, f"{caption}")
    
 def aggiorna_canvas_fine_turno(canvas, barretta, cioccolato):
   canvas.clear()
-  aggiungi_caption_canvas(canvas)
+  disegna_capi(canvas)
   disegna_barretta(canvas, barretta, cioccolato) # aggiorna graficamente la barretta con lo stato dei quadratini di cioccolato tenendo conto di quelli mangiati
 
 def fine_turno(canvas, barretta, cioccolato):
@@ -69,6 +73,7 @@ def apri_schermata_iniziale(win, canvas, cioccolato):
   x,y = win.getMouse()
   global modalita_di_gioco
   if 0 <= x <= canvas.width()//3*1:
+    modalita_di_gioco = 0
     inizializza_gioco(win, canvas, cioccolato)
   elif canvas.width()//3*1 <= x <= canvas.width()//3*2:
       modalita_di_gioco = 1
@@ -117,8 +122,6 @@ def main():
   apri_schermata_iniziale(win, canvas, cioccolato)  
 
 
-
-
 def inizializza_gioco(win, canvas, cioccolato):
   global giocatore
   global modalita_di_gioco
@@ -126,17 +129,18 @@ def inizializza_gioco(win, canvas, cioccolato):
   barretta = matrice_costante(SIZEY, SIZEX, 1) # crea una matrice di interi della dimensione della barretta che contiene 0 se un pezzetto è mangiato, 1 se non è stato ancora mangiato.
 
   canvas.clear()
-  aggiungi_caption_canvas(canvas)
+  disegna_capi(canvas)
   disegna_barretta(canvas, barretta, cioccolato) # disegna graficamente la barretta di cioccolato per la prima volta
 
   def gioca_mossa(x,y):
     """
-    x,y = mossa
+    x,y sono le coordinate della mossa da giocare.
     """
-    colonna_matrice = x // cioccolato.width()
-    riga_matrice = y // cioccolato.height()
-    if controlla_validita_mossa(barretta, colonna_matrice, riga_matrice):
-      elimina_quadratini_matrice_barretta(barretta, colonna_matrice, riga_matrice)
+    if modalita_di_gioco == 0 or (modalita_di_gioco == 1 and giocatore == 1): # se è il turno del giocatore, divide l'output di getMouse() per la grandezza dell'immagine del quadratino
+      x = x // cioccolato.width()
+      y = y // cioccolato.height()
+    if controlla_validita_mossa(barretta, x, y):
+      elimina_quadratini_matrice_barretta(barretta, x, y)
       fine_turno(canvas, barretta, cioccolato)
 
 
@@ -146,21 +150,30 @@ def inizializza_gioco(win, canvas, cioccolato):
       x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
       gioca_mossa(x,y)
 
-    # # -------------------- Modalità Giocatore contro Computer -------------------- #
-    if modalita_di_gioco == 1 and giocatore == 1:
+    # -------------------- Modalità Giocatore contro Computer -------------------- #
+    if modalita_di_gioco == 1 and giocatore == 1: # turno del Giocatore
       x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
       gioca_mossa(x,y)
-    elif modalita_di_gioco == 1 and giocatore == 2: # tocca al Computer
+    elif modalita_di_gioco == 1 and giocatore == 2: # turno del Computer
       sleep(1) # tempo di attesa in secondi prima di fare una mossa
-      x_CPU, y_CPU = scegli_mossa_bot()
-      x_CPU *= cioccolato.width()
-      y_CPU *= cioccolato.height()
-      gioca_mossa(x_CPU, y_CPU)
-    
-
-
-
-  
+      while True:
+        x_CPU, y_CPU = scegli_mossa_bot()
+        if controlla_validita_mossa(barretta, x_CPU, y_CPU):
+          gioca_mossa(x_CPU, y_CPU)
+          break
+        else:
+          pass
+      
+    # --------------------- Modalità Computer contro Computer -------------------- #
+    if modalita_di_gioco == 2: # il turno è sempre del Computer, alternandosi fra un bot e l'altro
+      sleep(1) # tempo di attesa in secondi prima di fare una mossa
+      while True:
+        x_CPU, y_CPU = scegli_mossa_bot()
+        if controlla_validita_mossa(barretta, x_CPU, y_CPU):
+          gioca_mossa(x_CPU, y_CPU)
+          break
+        else:
+          pass
 
     # ---------------------- Verifica condizioni di vittoria --------------------- #
     # ------- (aprendo eventualmente la schermata di conclusione del gioco) ------ #
@@ -168,17 +181,23 @@ def inizializza_gioco(win, canvas, cioccolato):
       canvas.clear()
       canvas.setTextAnchor("center")
       canvas.setFontSize(25)
-      canvas.drawText(canvas.width()//2,canvas.height()//2,f"Giocatore {giocatore} vince!") # visualizza sulla canvas il testo con l'annuncio del vincitore
+
+      testo_vincitore = f"Giocatore {giocatore} vince!"
+      if modalita_di_gioco == 2:
+        testo_vincitore = f"Computer {giocatore} vince!"
+      elif modalita_di_gioco == 1 and giocatore == 1:
+        testo_vincitore = f"Giocatore vince!"
+      elif modalita_di_gioco == 1 and giocatore == 2:
+        testo_vincitore = f"Computer vince!"
+      canvas.drawText(canvas.width()//2, canvas.height()//2, f"{testo_vincitore}") # visualizza sulla canvas il testo con l'annuncio del vincitore
       canvas.setFontSize(10)
       canvas.drawText(canvas.width()//2,canvas.height()//2+30,f"Clicca sullo schermo per tornare alla schermata iniziale")
+
 
       giocatore = 1
       win.getMouse()
       apri_schermata_iniziale(win, canvas, cioccolato)
-      # ------------------------------------- - ------------------------------------ #
-
-
-
+    # ------------------------------------- - ------------------------------------ #
 
 
 main()
