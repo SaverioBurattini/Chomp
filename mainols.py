@@ -8,15 +8,15 @@ def elimina_elementi_matrice(m, x, y):
   La funzione accetta come parametri una matrice e di essa una colonna (x) e una riga (y).
   La matrice viene modificata in modo tale che i suoi elementi assumano valore 0 nel caso in cui il quadratino corrispondente e quelli a esso sottostanti siano stati mangiati (il quadratino rimane 1 se non è stato mangiato).
   """
-  for i in range(y, len(m)):
-      for j in range(x, len(m[i])):
+  for i in range(y, len(m)): # righe
+      for j in range(x, len(m[i])): # colonne # len(m[i])  partendo da x e arrivando fino alla lunghezza della sotto 
           m[i][j] = 0
 
 
 
 def controlla_validita_mossa(barretta, x, y):
   """
-  La funzione accetta come parametri la matrice barretta e di essa una colonna (x) e una riga (y).
+  La funzione accetta come parametri una matrice e di essa una colonna (x) e una riga (y).
   Viene controllato se nella matrice sono presenti elementi di valore 1 nella posizione data nelle coordinate x, y.
   """
   return True if barretta[y][x] == 1 else False
@@ -41,30 +41,22 @@ def disegna_caption(canvas):
   elif(modalita_di_gioco == 1 and giocatore == 2): # modalità Giocatore contro Computer, turno del Computer
     caption = f"Turno del computer"
   canvas.drawText(canvas.width()//2, CAPTION_HEIGHT//2, f"{caption}")
+   
+def fine_turno(canvas, barretta, cioccolato): # funzione che a fine turno aggiorna il giocatore e la canvas 
+  global giocatore
+  giocatore = 2 if giocatore == 1 else 1 #shorthand
 
-def disegna_canvas_gioco(canvas, barretta, cioccolato):
-  """
-  Resetta graficamente la canvas disegnando la caption e la barretta.
-  """
   canvas.clear()
   disegna_caption(canvas)
-  disegna_barretta(canvas, barretta, cioccolato) # aggiorna graficamente la barretta tenendo conto di quelli mangiati
-
-def fine_turno(canvas, barretta, cioccolato):
-  """
-  Aggiorna la variabile giocatore e, graficamente, resetta la canvas ridisegnando la caption e la barretta.
-  """
-  global giocatore
-  giocatore = 2 if giocatore == 1 else 1
-  disegna_canvas_gioco(canvas, barretta, cioccolato)
+  disegna_barretta(canvas, barretta, cioccolato) # aggiorna graficamente la barretta con lo stato dei quadratini di cioccolato tenendo conto di quelli mangiati
 
 
-def apri_menu_iniziale(win, canvas, cioccolato): 
+def apri_schermata_iniziale(win, canvas, cioccolato): 
   canvas.clear()
 
   for i in range(1,3):
     canvas.drawLine((canvas.width()//3*i),0,
-                    (canvas.width()//3*i),canvas.height()) # disegna sulla canvas due linee verticali che dividono la schermata in tre sezioni utili all'utente a scegliere la modalità di gioco
+                    (canvas.width()//3*i),canvas.height()) # disegna sulla canvas tre linee verticali che dividono la schermata in tre sezioni utili all'utente a scegliere la modalità di gioco
     
   for i in range(1,4):
     canvas.setTextAnchor("center")
@@ -87,13 +79,13 @@ def apri_menu_iniziale(win, canvas, cioccolato):
   elif canvas.width()//3*2 <= x <= canvas.width()//3*3:
       modalita_di_gioco = 2 # Computer contro Computer
       inizializza_gioco(win, canvas, cioccolato)
+  else:
+      print("Errore")
+      win.close()
 
-
-
-SIZEX = 10 # quantità di quadratini della barretta sull'asse delle x
-SIZEY = 5 # quantità di quadratini della barretta sull'asse delle y
-
-CAPTION_HEIGHT = SIZEY * 7.5 # altezza della caption; maggiore è la quantità di quadratini sull'asse delle y, più grande sarà la grandezza della caption
+SIZEX = 20 # grandezza griglia barretta orizzontale
+SIZEY = 15 # grandezza griglia barretta verticale
+CAPTION_HEIGHT = SIZEY*7.5 # grandezza della griglia della caption (solo orizzontale, prende tutto lo schermo)
 
 def matrice_costante(nrow, ncol, v):
   """
@@ -106,13 +98,13 @@ def matrice_costante(nrow, ncol, v):
 
 def disegna_barretta(canvas, barretta, img):
   """
-  Disegna la barretta di cioccolato sulla canvas.
+  Disegna la barretta di cioccolato sul canvas.
   """
   for i in range(len(barretta)):
       for j in range(len(barretta[i])):
-          if barretta[i][j] == 1:  # disegna solo i quadratini non mangiati
+          if barretta[i][j] == 1:  # disegna solo i quadrati non mangiati
               canvas.drawImage(j * img.width(), i * img.height()+CAPTION_HEIGHT, img)
-          if (i,j) == (0,0): # disegna un quadrato verde sul quadratino di cioccolato avvelenato
+          if (i,j) == (0,0): # disegna un quadrato verde sul quadratino avvelenato
             canvas.setFill("green")
             canvas.drawRectangle(img.width()*0.25,CAPTION_HEIGHT+img.height()*0.25,img.width()*0.50,img.height()*0.50)
 
@@ -120,9 +112,11 @@ def inizializza_gioco(win, canvas, cioccolato):
   global giocatore
   global modalita_di_gioco
 
-  barretta = matrice_costante(SIZEY, SIZEX, 1) # crea una matrice piena di 1, delle dimensioni della barretta, che contiene 0 se un pezzetto è stato mangiato, 1 se non è stato ancora mangiato
+  barretta = matrice_costante(SIZEY, SIZEX, 1) # crea una matrice di interi della dimensione della barretta che contiene 0 se un pezzetto è mangiato, 1 se non è stato ancora mangiato.
 
-  disegna_canvas_gioco(canvas, barretta, cioccolato) # disegna graficamente la barretta di cioccolato per la prima volta
+  canvas.clear()
+  disegna_caption(canvas)
+  disegna_barretta(canvas, barretta, cioccolato) # disegna graficamente la barretta di cioccolato per la prima volta
 
   def gioca_mossa(x,y):
     """
@@ -146,32 +140,31 @@ def inizializza_gioco(win, canvas, cioccolato):
     if modalita_di_gioco == 0:
       x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
       gioca_mossa(x,y)
-      # ------------------------------------- - ------------------------------------ #
-
 
     # -------------------- Modalità Giocatore contro Computer -------------------- #
     if modalita_di_gioco == 1 and giocatore == 1: # turno del Giocatore
       x,y = win.getMouse() # accetta l'input (click del mouse) e rimane in attesa fino a che l'utente fa una mossa valida
       gioca_mossa(x,y)
     elif modalita_di_gioco == 1 and giocatore == 2: # turno del Computer
-      sleep(1) # tempo di attesa in secondi prima che la mossa venga giocata
+      sleep(1) # tempo di attesa in secondi prima di fare una mossa
       while True:
         x_CPU, y_CPU = scegli_mossa_bot()
         if controlla_validita_mossa(barretta, x_CPU, y_CPU):
           gioca_mossa(x_CPU, y_CPU)
           break
-    # ------------------------------------- - ------------------------------------ #
-
+        else:
+          pass
       
     # --------------------- Modalità Computer contro Computer -------------------- #
     if modalita_di_gioco == 2: # il turno è sempre del Computer, alternandosi fra un bot e l'altro
-      sleep(1)
+      sleep(1) # tempo di attesa in secondi prima di fare una mossa
       while True:
         x_CPU, y_CPU = scegli_mossa_bot()
         if controlla_validita_mossa(barretta, x_CPU, y_CPU):
           gioca_mossa(x_CPU, y_CPU)
           break
-    # ------------------------------------- - ------------------------------------ #
+        else:
+          pass
 
     # ---------------------- Verifica condizioni di vittoria --------------------- #
     # ------- (aprendo eventualmente la schermata di conclusione del gioco) ------ #
@@ -192,15 +185,16 @@ def inizializza_gioco(win, canvas, cioccolato):
       canvas.drawText(canvas.width()//2,canvas.height()//2+30,f"Clicca sullo schermo per tornare alla schermata iniziale")
 
 
-      giocatore = 1 # viene resettata la variabile giocatore per eventuali prossime partite
+      giocatore = 1
       win.getMouse()
-      apri_menu_iniziale(win, canvas, cioccolato)
+      apri_schermata_iniziale(win, canvas, cioccolato)
     # ------------------------------------- - ------------------------------------ #
 
 
 
 
-
+giocatore = 1 # variabile di stato di gioco del giocatore al valore iniziale (può assumere 1 o 2 in base al turno di quale giocatore gioca)
+modalita_di_gioco = 0 # variabile che cambia in base alla modalità del gioco scelta dal giocatore (0 = PvP, 1 = PvC, 2 = CvC)
 def main():
   cioccolato = GraphicsImage("chocolate.png")
   win = GraphicsWindow(SIZEX * cioccolato.width(), 
@@ -208,10 +202,6 @@ def main():
   win.setTitle("Chomp")
   canvas = win.canvas()
 
-  apri_menu_iniziale(win, canvas, cioccolato)
-
-# ------------------------- Variabili stato di gioco ------------------------- #
-giocatore = 1 # settata al valore iniziale di 1; può assumere valore 1 o 2 in base al turno del giocatore; alla fine del gioco viene resettata al suo valore iniziale
-modalita_di_gioco = 0 # varia in base alla modalità del gioco scelta dal giocatore (0 = PvP, 1 = PvC, 2 = CvC)
+  apri_schermata_iniziale(win, canvas, cioccolato)
 
 main()
