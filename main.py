@@ -106,6 +106,9 @@ def disegna_barretta(canvas, barretta, img):
       for j in range(len(barretta[i])):
           if barretta[i][j] == 1:  # disegna solo i quadrati non mangiati
               canvas.drawImage(j * img.width(), i * img.height()+CAPTION_HEIGHT, img)
+          if (i,j) == (0,0): # disegna un quadrato verde sul quadratino avvelenato
+            canvas.setFill("green")
+            canvas.drawRectangle(img.width()//4,CAPTION_HEIGHT*1.35,img.width()*0.50,img.height()*0.50)
           #227 Mr. B's contribution
 
 def inizializza_gioco(win, canvas, cioccolato):
@@ -122,13 +125,17 @@ def inizializza_gioco(win, canvas, cioccolato):
     """
     x,y sono le coordinate della mossa da giocare.
     """
+    
     if modalita_di_gioco == 0 or (modalita_di_gioco == 1 and giocatore == 1): # se è il turno del giocatore, divide l'output di getMouse() per la grandezza dell'immagine del quadratino
       y -= CAPTION_HEIGHT # la coordinata y deve tenere in considerazione lo spazio verticale occupato dalla caption
+      
       x = int(x // cioccolato.width())
       y = int(y // cioccolato.height())
-    if controlla_validita_mossa(barretta, x, y):
-      elimina_elementi_matrice(barretta, x, y)
-      fine_turno(canvas, barretta, cioccolato)
+
+    if 0 <= x < SIZEX and 0 <= y < SIZEY: # controlla se il click input dell'utente è avvenuto nella griglia della barretta
+      if controlla_validita_mossa(barretta, x, y):
+        elimina_elementi_matrice(barretta, x, y)
+        fine_turno(canvas, barretta, cioccolato)
 
 
   while True:
